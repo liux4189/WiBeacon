@@ -1,0 +1,28 @@
+Index: backports-4.19.32-1/drivers/net/wireless/ath/ath9k/xmit.c
+===================================================================
+--- backports-4.19.32-1.orig/drivers/net/wireless/ath/ath9k/xmit.c
++++ backports-4.19.32-1/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -2288,6 +2288,7 @@ static struct ath_buf *ath_tx_setup_buff
+ 	return bf;
+ }
+ 
++#define IBEACON_PROBE_PAYLOAD_LEN (74+512)
+ void ath_assign_seq(struct ath_common *common, struct sk_buff *skb)
+ {
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
+@@ -2308,6 +2309,15 @@ void ath_assign_seq(struct ath_common *c
+ 
+ 	hdr->seq_ctrl &= cpu_to_le16(IEEE80211_SCTL_FRAG);
+ 	hdr->seq_ctrl |= cpu_to_le16(avp->seq_no);
++
++        //Patch Start from here
++        if(skb->len == IBEACON_PROBE_PAYLOAD_LEN){ 
++        	printk("ath_assign_seq:%.2x->%.2x %.2x->%.2x\n", skb->data[74],skb->data[skb->len-3],skb->data[74+169],skb->data[skb->len-2]);
++        	skb->data[74]     = skb->data[skb->len-3];
++		skb->data[74+169] = skb->data[skb->len-2];
++		skb->data[74+341] = skb->data[skb->len-1];	   
++        	hdr->seq_ctrl = 0;
++       }
+ }
+ 
+ static int ath_tx_prepare(struct ieee80211_hw *hw, struct sk_buff *skb,
